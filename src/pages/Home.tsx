@@ -1,7 +1,7 @@
 import icon from '@/../assets/icon.svg'
 import '@/App.global.css'
 
-const Hello = () => {
+const Home = () => {
   return (
     <div>
       <div className='Hello'>
@@ -38,4 +38,4 @@ const Hello = () => {
   )
 }
 
-export default Hello
+export default Home
