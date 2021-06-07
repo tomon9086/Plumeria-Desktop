@@ -1,6 +1,5 @@
 import { Box, Button } from '@material-ui/core'
 import icon from '@/../assets/icon.svg'
-import '@/App.global.css'
 
 const Home = () => {
   return (

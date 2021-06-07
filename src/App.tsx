@@ -1,4 +1,5 @@
 import { Route, BrowserRouter as Router, Switch } from 'react-router-dom'
+import '@/App.global.css'
 
 import Home from '@/pages/Home'
 
