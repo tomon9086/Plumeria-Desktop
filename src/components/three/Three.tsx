@@ -1,13 +1,13 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame, useLoader } from '@react-three/fiber'
-import { Group, Scene, THREE } from 'three'
-import { VRM, VRMUtils } from '@pixiv/three-vrm'
+import { Mesh, Vector3 } from 'three'
+import { VRM, VRMSchema, VRMUtils } from '@pixiv/three-vrm'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 
 import OrbitControl from './OrbitControl'
 
 const Box = (props: JSX.IntrinsicElements['mesh']) => {
-  const mesh = useRef<THREE.Mesh>(null!)
+  const mesh = useRef<Mesh>(null!)
   const [hovered, setHover] = useState(false)
   const [active, setActive] = useState(false)
 
@@ -37,24 +37,35 @@ interface Props {
 }
 
 const Vrm = ({ url }: Props) => {
-  const [scene, setScene] = useState<Scene | Group | null>(null)
+  const [vrm, setVrm] = useState<VRM | undefined>()
   const gltf = useLoader(GLTFLoader, url)
 
   useEffect(() => {
     VRMUtils.removeUnnecessaryJoints(gltf.scene)
     VRM.from(gltf)
       .then((vrm) => {
-        setScene(vrm.scene)
-        // const boneNode = vrm.humanoid?.getBoneNode(VRMSchema.HumanoidBoneName.Hips)
-        // boneNode?.rotateY(Math.PI)
+        setVrm(vrm)
+        vrm.humanoid
+          ?.getBoneNode(VRMSchema.HumanoidBoneName.Hips)
+          ?.rotateY(Math.PI)
       })
-  }, [gltf, setScene])
+  }, [gltf, setVrm])
 
-  if (scene === null) {
-    return null
-  }
+  useFrame((state, delta) => {
+    const mouse = state.mouse
+    const headBone = vrm?.humanoid?.getBoneNode(VRMSchema.HumanoidBoneName.LeftEye) || undefined
+    vrm?.lookAt?.lookAt(new Vector3(
+      mouse.x,
+      mouse.y + (headBone?.position.y ?? 0),
+      1))
+    vrm?.update(delta)
+  })
 
-  return <primitive dispose={null} object={scene} />
+  return (
+    vrm?.scene
+      ? <primitive dispose={null} object={vrm?.scene} />
+      : null
+  )
 }
 
 const Three = () => {
@@ -70,7 +81,7 @@ const Three = () => {
       >
         Three!
       </h1>
-      <Suspense fallback={<div>loading @three</div>}>
+      <Suspense fallback={<div>loading...</div>}>
         <Canvas>
           <ambientLight />
           <pointLight color={[0.3, 0.3, 0.3]} position={[10, 10, 10]} />
@@ -78,7 +89,8 @@ const Three = () => {
           <OrbitControl />
           <Box position={[-1.2, 0, 0]} />
           <Box position={[1.2, 0, 0]} />
-          {/* <Vrm url='/model/test.vrm' /> */}
+          {/* eslint-disable-next-line node/no-path-concat */}
+          <Vrm url={`file://${__dirname}/model/test.vrm`} />
         </Canvas>
       </Suspense>
     </div>
