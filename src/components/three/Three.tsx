@@ -1,36 +1,15 @@
-import { Suspense, useEffect, useRef, useState } from 'react'
+import { resolve } from 'path'
+import { OpenDialogOptions, OpenDialogReturnValue } from 'electron'
+import { Suspense, useEffect, useState } from 'react'
 import { Canvas, useFrame, useLoader } from '@react-three/fiber'
-import { Mesh, Vector3 } from 'three'
+import { Vector3 } from 'three'
 import { VRM, VRMSchema, VRMUtils } from '@pixiv/three-vrm'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 
+import Box from './Box'
 import OrbitControl from './OrbitControl'
-
-const Box = (props: JSX.IntrinsicElements['mesh']) => {
-  const mesh = useRef<Mesh>(null!)
-  const [hovered, setHover] = useState(false)
-  const [active, setActive] = useState(false)
-
-  useFrame((_state, _delta) => {
-    mesh.current.rotation.x += 0.01
-    mesh.current.rotation.y += 0.01
-    mesh.current.rotation.z += 0.01
-  })
-
-  return (
-    <mesh
-      {...props}
-      onClick={(_event) => setActive(!active)}
-      onPointerOut={(_event) => setHover(false)}
-      onPointerOver={(_event) => setHover(true)}
-      ref={mesh}
-      scale={active ? 1.5 : 1}
-    >
-      <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial color={hovered ? 'hotpink' : 'orange'} />
-    </mesh>
-  )
-}
+import { ipcr } from '@/utils/ipc'
+import { CHANNEL } from '@/types/ipc'
 
 interface Props {
   url: string
@@ -69,18 +48,41 @@ const Vrm = ({ url }: Props) => {
 }
 
 const Three = () => {
+  const [url, setUrl] = useState<string | undefined>()
+
+  const openFile = async () => {
+    const result = await ipcr<OpenDialogOptions, OpenDialogReturnValue>(CHANNEL.openFileDialog, {
+      title: 'Select a VRoid model file',
+      filters: [{
+        name: 'VRoid model (.vrm)',
+        extensions: ['vrm']
+      }]
+    })
+
+    if (result.canceled) {
+      return
+    }
+
+    setUrl(resolve('file:/', __dirname, result.filePaths[0]))
+  }
+
   return (
     <div style={{
       width: '100vw',
       height: '100vh'
     }}
     >
-      <h1 style={{
-        position: 'absolute'
+      <div style={{
+        position: 'absolute',
+        zIndex: 1000
       }}
       >
-        Three!
-      </h1>
+        <button
+          onClick={() => openFile()}
+        >
+          open
+        </button>
+      </div>
       <Suspense fallback={<div>loading...</div>}>
         <Canvas>
           <ambientLight />
@@ -89,8 +91,7 @@ const Three = () => {
           <OrbitControl />
           <Box position={[-1.2, 0, 0]} />
           <Box position={[1.2, 0, 0]} />
-          {/* eslint-disable-next-line node/no-path-concat */}
-          <Vrm url={`file://${__dirname}/model/test.vrm`} />
+          {url && <Vrm url={url} />}
         </Canvas>
       </Suspense>
     </div>

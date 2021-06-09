@@ -11,10 +11,12 @@
 import 'core-js/stable'
 import 'regenerator-runtime/runtime'
 import path from 'path'
-import { BrowserWindow, app, shell } from 'electron'
+import { BrowserWindow, OpenDialogOptions, app, dialog, ipcMain, shell } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import log from 'electron-log'
 import MenuBuilder from './menu'
+
+import { CHANNEL } from './types/ipc'
 
 export default class AppUpdater {
   constructor () {
@@ -49,6 +51,25 @@ const installExtensions = () => {
       forceDownload
     )
     .catch(console.log)
+}
+
+const addIpcListeners = () => {
+  ipcMain.on(CHANNEL.ping, (event, _arg) => {
+    event.reply(CHANNEL.ping, 'pong')
+  })
+
+  ipcMain.on(CHANNEL.openFileDialog, async (event, payload?: OpenDialogOptions) => {
+    if (!mainWindow) {
+      event.reply(CHANNEL.openFileDialog)
+      return
+    }
+
+    const value = await dialog.showOpenDialog(mainWindow, {
+      ...payload,
+      properties: payload?.properties ?? ['openFile']
+    })
+    event.reply(CHANNEL.openFileDialog, value)
+  })
 }
 
 const createWindow = async () => {
@@ -106,6 +127,8 @@ const createWindow = async () => {
     event.preventDefault()
     shell.openExternal(url)
   })
+
+  addIpcListeners()
 
   // Remove this if your app does not use auto updates
   // eslint-disable-next-line
