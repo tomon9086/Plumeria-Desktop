@@ -63,6 +63,7 @@ const Three = () => {
       return
     }
 
+    setUrl(undefined)
     setUrl(resolve('file:/', __dirname, result.filePaths[0]))
   }
 
