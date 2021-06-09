@@ -27,6 +27,7 @@ module.exports = (api) => {
     ],
     plugins: [
       'react-require',
+      [require('@babel/plugin-proposal-private-methods'), { loose: true }],
 
       // Stage 0
       require('@babel/plugin-proposal-function-bind'),
