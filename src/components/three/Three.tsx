@@ -2,7 +2,7 @@ import { resolve } from 'path'
 import { OpenDialogOptions, OpenDialogReturnValue } from 'electron'
 import { Suspense, useEffect, useState } from 'react'
 import { Canvas, useFrame, useLoader } from '@react-three/fiber'
-import { Vector3 } from 'three'
+import { Euler, Vector3 } from 'three'
 import { VRM, VRMSchema, VRMUtils } from '@pixiv/three-vrm'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 
@@ -26,7 +26,7 @@ const Vrm = ({ url }: Props) => {
         setVrm(vrm)
         vrm.humanoid
           ?.getBoneNode(VRMSchema.HumanoidBoneName.Hips)
-          ?.rotateY(Math.PI)
+          ?.setRotationFromEuler(new Euler(0, Math.PI, 0))
       })
   }, [gltf, setVrm])
 
@@ -42,7 +42,7 @@ const Vrm = ({ url }: Props) => {
 
   return (
     vrm?.scene
-      ? <primitive dispose={null} object={vrm?.scene} />
+      ? <primitive dispose={vrm.dispose} object={vrm.scene} />
       : null
   )
 }
